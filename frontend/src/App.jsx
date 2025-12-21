@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const API_URL = 'http://localhost:3000/api/articles';
+// Use the Environment Variable if available, otherwise fallback to localhost
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/articles';
+
+
 const ArticleSkeleton = () => (
   <div className="bg-white border border-gray-100 rounded-xl p-8 shadow-sm animate-pulse h-full">
     <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
