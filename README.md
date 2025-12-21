@@ -1,5 +1,9 @@
 # BeyondChats AI Content Manager
 
+## 🌐 Live Deployment
+*   **Frontend (Vercel)**: [https://beyondchats-content-manager.vercel.app/](https://beyondchats-content-manager.vercel.app/)
+*   **Backend API (Render)**: [https://beyondchats-api.onrender.com/api/articles](https://beyondchats-api.onrender.com/api/articles)
+
 A full-stack application that scrapes blog articles, manages them via a REST API, and uses an automated AI agent to enhance content with external research.
 
 ## 🚀 Project Overview
