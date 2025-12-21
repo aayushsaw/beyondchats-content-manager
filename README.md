@@ -71,16 +71,8 @@ To trigger the "Search-Scrape-Update" workflow:
 ```bash
 node update_article.js
 ```
-*   **What happens?**: The script fetches the latest article, searches Google, scrapes 2 sources, updates the DB with an "AI Enhanced" section, and adds citations.
+*   **What happens?**: The script fetches the latest article, searches Google, scrapes 2 sources, updates the DB with an "AI Enhanced" section, and added citations.
 *   **Check Frontend**: Refresh the page to see the green **"AI Enhanced"** badge on the latest article.
-
----
-
-## ☁️ Deployment
-
-This project is configured for deployment on **Render** (Backend) and **Vercel** (Frontend).
-
-For detailed instructions, please refer to the [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
 
 ---
 
