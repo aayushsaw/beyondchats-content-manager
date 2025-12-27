@@ -4,15 +4,23 @@
 *   **Frontend (Vercel)**: [https://beyondchats-content-manager.vercel.app/](https://beyondchats-content-manager.vercel.app/)
 *   **Backend API (Render)**: [https://beyondchats-api.onrender.com/api/articles](https://beyondchats-api.onrender.com/api/articles)
 
-A full-stack application that scrapes blog articles from BeyondChats, manages them via a REST API, and uses an automated AI agent to enhance content with external research.
+A full-stack application that scrapes blog articles from BeyondChats, manages them via a REST API, and uses an automated AI agent to enhance content with external research. Features a modern, interactive UI with dark mode, search, filtering, and bookmarking capabilities.
 
 ## 🚀 Project Overview
 
-This project successfully implements all 3 phases of the challenge:
+This project successfully implements all 3 phases of the challenge plus enhanced interactive features:
 
 1.  **Phase 1 (Backend & Scraping)**: Scrapes recent trending articles from *BeyondChats* (2024-2025) covering AI, healthcare, and business topics, and stores them in a SQLite database with a CRUD API.
 2.  **Phase 2 (AI Automation)**: A robust script that searches Google for the latest article's title, scrapes external references (Wiki/IBM), and uses a simulated LLM to "enhance" the original article with new insights and citations.
-3.  **Phase 3 (Frontend)**: A responsive, "premium" React + Tailwind CSS dashboard that displays original and AI-enhanced articles.
+3.  **Phase 3 (Frontend)**: A responsive, "premium" React + Tailwind CSS dashboard that displays original and AI-enhanced articles with interactive features.
+
+### ✨ **Enhanced Features:**
+- **🌙 Dark Mode**: Toggle between light and dark themes with localStorage persistence
+- **🔍 Search & Filter**: Real-time search by title/content and filter by article type (All, AI Enhanced, Original)
+- **📚 Bookmarking**: Save favorite articles with persistent localStorage
+- **📊 Reading Progress**: Visual progress indicator when reading articles
+- **🎨 Interactive UI**: Smooth animations, hover effects, and micro-interactions
+- **📱 Responsive Design**: Optimized for all screen sizes
 
 **Technical Note**: Due to the local environment lacking PHP/Composer, the Backend (Phase 1) was implemented in **Node.js/Express** instead of Laravel. It fulfills all functional requirements (CRUD, Database, API).
 
@@ -24,6 +32,7 @@ This project successfully implements all 3 phases of the challenge:
 *   **Backend**: Node.js, Express
 *   **Database**: SQLite (`articles.db`)
 *   **Automation**: Puppeteer (Headless Browser), Axios, Cheerio
+*   **UI Features**: Dark Mode, Search & Filtering, Bookmarks, Reading Progress, Responsive Design
 
 ---
 
@@ -124,11 +133,21 @@ Example response for `GET /api/articles`:
 
 ## 🎨 Features & Highlights
 
+### **Core Features:**
 *   **Premium UI**: Glass-morphism effects, smooth staggered animations, and a clean "BeyondChats" inspired color palette.
 *   **Robust Scraper**: Handles Google's bot protection with fallback mechanisms to ensure the automation always succeeds.
 *   **Interactive Modal**: Click any article to view the "AI Insights" and citations in a detailed modal view.
 *   **Responsive Design**: Fully optimized for mobile and desktop screens.
 *   **AI Enhancement**: Simulated LLM integration for content enrichment with external references.
+
+### **🎯 Interactive Features:**
+*   **🌙 Dark Mode Toggle**: Switch between light and dark themes with persistent localStorage
+*   **🔍 Real-time Search**: Filter articles by title and content with instant results
+*   **🏷️ Smart Filtering**: Filter by article type (All, AI Enhanced, Original) with live counts
+*   **⭐ Bookmark System**: Save favorite articles with persistent bookmarking
+*   **📊 Reading Progress**: Visual progress bar showing reading completion in modals
+*   **🎭 Smooth Animations**: Enhanced micro-interactions and hover effects throughout
+*   **📱 Mobile-First**: Touch-friendly interactions optimized for all devices
 
 ---
 
