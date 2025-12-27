@@ -5,29 +5,64 @@ const db = new sqlite3.Database('./articles.db');
 
 const articles = [
     {
-        title: "Which chatbot is right for your business: Intercom vs BeyondChats",
-        url: "https://beyondchats.com/blogs/beyondchats-vs-intercom-comparison/",
-        date: "2025-02-26"
+        title: "Choosing the right AI chatbot : A Guide",
+        url: "https://beyondchats.com/blogs/choosing-the-right-ai-chatbot-a-guide/",
+        date: "2025-11-28"
     },
     {
         title: "Google Ads: Are you wasting your money on clicks?",
         url: "https://beyondchats.com/blogs/google-ads-are-you-wasting-your-money-on-clicks/",
-        date: "2024-04-09"
-    },
-    {
-        title: "Will AI Understand the Complexities of Patient Care?",
-        url: "https://beyondchats.com/blogs/will-ai-understand-the-complexities-of-patient-care/",
-        date: "2024-04-02"
+        date: "2025-04-10"
     },
     {
         title: "Should you trust AI in healthcare?",
         url: "https://beyondchats.com/blogs/should-you-trust-ai-in-healthcare/",
-        date: "2024-04-08"
+        date: "2025-04-08"
+    },
+    {
+        title: "Why we are building yet another AI Chatbot",
+        url: "https://beyondchats.com/blogs/why-we-are-building-yet-another-ai-chatbot/",
+        date: "2025-04-03"
+    },
+    {
+        title: "Will AI Understand the Complexities of Patient Care?",
+        url: "https://beyondchats.com/blogs/will-ai-understand-the-complexities-of-patient-care/",
+        date: "2025-04-02"
+    },
+    {
+        title: "Your website needs a receptionist",
+        url: "https://beyondchats.com/blogs/your-website-needs-a-receptionist/",
+        date: "2025-03-25"
+    },
+    {
+        title: "What If AI Recommends the Wrong Medicine – Who's to Blame?",
+        url: "https://beyondchats.com/blogs/what-if-ai-recommends-the-wrong-medicine-whos-to-blame/",
+        date: "2025-03-24"
+    },
+    {
+        title: "What If AI Recommends the Wrong Medicine – Who's Responsible?",
+        url: "https://beyondchats.com/blogs/what-if-ai-recommends-the-wrong-medicine-whos-to-blame-2/",
+        date: "2025-03-24"
+    },
+    {
+        title: "AI in Healthcare: Hype or Reality?",
+        url: "https://beyondchats.com/blogs/ai-in-healthcare-hype-or-reality/",
+        date: "2025-03-21"
+    },
+    {
+        title: "A complete AI solution for Doctors: Beyondchats",
+        url: "https://beyondchats.com/blogs/a-complete-ai-solution-for-doctors-beyondchats/",
+        date: "2025-03-18"
     },
     {
         title: "Use these ChatGPT prompt techniques to be more effective",
         url: "https://beyondchats.com/blogs/chatgpt-prompt-techniques-to-be-more-effective/",
-        date: "2024-03-17"
+        date: "2025-03-17"
+    },
+    {
+        title: "Which chatbot is right for your business: Intercom vs BeyondChats",
+        url: "https://beyondchats.com/blogs/beyondchats-vs-intercom-comparison/",
+        date: "2025-02-26"
     }
 ];
 
