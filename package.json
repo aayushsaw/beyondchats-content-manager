@@ -1,12 +1,15 @@
 {
-  "name": "new-folder",
+  "name": "beyondchats-content-manager",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A full-stack application for scraping, managing, and AI-enhancing BeyondChats blog articles",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
+    "scrape": "node scrape_and_store.js",
+    "update": "node update_article.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["content-manager", "scraping", "ai", "react", "express"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",

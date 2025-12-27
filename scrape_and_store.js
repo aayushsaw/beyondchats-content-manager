@@ -5,29 +5,29 @@ const db = new sqlite3.Database('./articles.db');
 
 const articles = [
     {
-        title: "Chatbots Magic: Beginner’s Guidebook",
-        url: "https://beyondchats.com/blogs/introduction-to-chatbots/",
-        date: "2023-12-05"
+        title: "Which chatbot is right for your business: Intercom vs BeyondChats",
+        url: "https://beyondchats.com/blogs/beyondchats-vs-intercom-comparison/",
+        date: "2025-02-26"
     },
     {
-        title: "7 ways a Live Chatbot transforms customer interaction",
-        url: "https://beyondchats.com/blogs/live-chatbot/",
-        date: "2023-12-06"
+        title: "Google Ads: Are you wasting your money on clicks?",
+        url: "https://beyondchats.com/blogs/google-ads-are-you-wasting-your-money-on-clicks/",
+        date: "2024-04-09"
     },
     {
-        title: "7 Clear Indicators Your Business Needs a Virtual Assistant",
-        url: "https://beyondchats.com/blogs/virtual-assistant/",
-        date: "2023-12-07"
+        title: "Will AI Understand the Complexities of Patient Care?",
+        url: "https://beyondchats.com/blogs/will-ai-understand-the-complexities-of-patient-care/",
+        date: "2024-04-02"
     },
     {
-        title: "10X Your Leads: How Chatbots Revolutionize Lead Generation",
-        url: "https://beyondchats.com/blogs/lead-generation-chatbots/",
-        date: "2023-12-08"
+        title: "Should you trust AI in healthcare?",
+        url: "https://beyondchats.com/blogs/should-you-trust-ai-in-healthcare/",
+        date: "2024-04-08"
     },
     {
-        title: "Can Chatbots Boost Small Business Growth?",
-        url: "https://beyondchats.com/blogs/chatbots-for-small-business-growth/",
-        date: "2023-12-08"
+        title: "Use these ChatGPT prompt techniques to be more effective",
+        url: "https://beyondchats.com/blogs/chatgpt-prompt-techniques-to-be-more-effective/",
+        date: "2024-03-17"
     }
 ];
 
