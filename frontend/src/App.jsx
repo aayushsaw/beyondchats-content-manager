@@ -224,154 +224,107 @@ function App() {
 
       <main className="max-w-7xl mx-auto px-4 pb-12">
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3, 4, 5, 6].map((n) => <ArticleSkeleton key={n} isDark={isDark} />)}
-          </div>
-        ) : (
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
           >
-            {filteredArticles.map((article) => {
-              const isUpdated = !!article.updated_content;
-              const isBookmarked = bookmarkedArticles.has(article.id);
-              return (
-                <motion.div
-                  key={article.id}
-                  variants={itemVariants}
-                  className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between"
-                >
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                  {/* Bookmark Button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleBookmark(article.id);
-                    }}
-                    className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 ${
-                      isBookmarked
-                        ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
-                        : 'text-gray-400 hover:text-yellow-500 bg-white/80 dark:bg-gray-700/80 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                    }`}
+            {[1, 2, 3, 4, 5, 6].map((n) => <ArticleSkeleton key={n} isDark={isDark} />)}
+          </motion.div>
+        ) : (
+          <>
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {filteredArticles.map((article) => {
+                const isUpdated = !!article.updated_content;
+                const isBookmarked = bookmarkedArticles.has(article.id);
+                return (
+                  <motion.div
+                    key={article.id}
+                    variants={itemVariants}
+                    className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between"
                   >
-                    <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                    </svg>
-                  </button>
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                  <div>
-                    <motion.div
-                      className="text-2xl font-bold mb-3 text-gray-900 dark:text-white cursor-pointer group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight pr-12"
-                      onClick={() => openArticle(article)}
-                      whileHover={{ x: 2 }}
+                    {/* Bookmark Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(article.id);
+                      }}
+                      className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 ${
+                        isBookmarked
+                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                          : 'text-gray-400 hover:text-yellow-500 bg-white/80 dark:bg-gray-700/80 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                      }`}
                     >
-                      {article.title}
-                    </motion.div>
+                      <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                      </svg>
+                    </button>
 
-                    <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-6">
-                      <span className="font-medium bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">{article.published_date}</span>
-                      {isUpdated ? (
-                        <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
-                          <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
-                          <span className="relative flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            AI Enhanced
+                    <div>
+                      <motion.div
+                        className="text-2xl font-bold mb-3 text-gray-900 dark:text-white cursor-pointer group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight pr-12"
+                        onClick={() => openArticle(article)}
+                        whileHover={{ x: 2 }}
+                      >
+                        {article.title}
+                      </motion.div>
+
+                      <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        <span className="font-medium bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">{article.published_date}</span>
+                        {isUpdated ? (
+                          <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
+                            <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
+                            <span className="relative flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                              AI Enhanced
+                            </span>
                           </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
-                      )}
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
+                        )}
+                      </div>
+
+                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-3">
+                        {getPreview(article.content)}
+                      </div>
                     </div>
 
-                    <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-3">
-                      {getPreview(article.content)}
-                    </div>
-                  </div>
-
-                  <motion.button
-                    className="w-full py-3 rounded-lg font-semibold text-sm transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 flex items-center justify-center gap-2 group-hover:shadow-md"
-                    onClick={() => openArticle(article)}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Read Article
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                  </motion.button>
-                </motion.div>
-              )
-            })}
-          </motion.div>
-        )}
-
-        {/* No Results Message */}
-        {!loading && filteredArticles.length === 0 && (
-          <motion.div
-            className="text-center py-16"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No articles found</h3>
-            <p className="text-gray-600 dark:text-gray-400">Try adjusting your search terms or filters</p>
-          </motion.div>
-        )}
-      </main>
-          >
-            {articles.map((article) => {
-              const isUpdated = !!article.updated_content;
-              return (
-                <motion.div
-                  key={article.id}
-                  variants={itemVariants}
-                  className="bg-white border border-gray-100 rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 group relative overflow-hidden flex flex-col justify-between"
-                >
-                  <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-accent-primary to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                  <div>
-                    <motion.div
-                      className="text-2xl font-bold mb-3 text-gray-900 cursor-pointer group-hover:text-accent-primary transition-colors leading-tight"
+                    <motion.button
+                      className="w-full py-3 rounded-lg font-semibold text-sm transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 flex items-center justify-center gap-2 group-hover:shadow-md"
                       onClick={() => openArticle(article)}
-                      whileHover={{ x: 2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      {article.title}
-                    </motion.div>
+                      Read Article
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </motion.button>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
 
-                    <div className="flex justify-between items-center text-sm text-text-secondary mb-6">
-                      <span className="font-medium bg-gray-50 px-2 py-1 rounded">{article.published_date}</span>
-                      {isUpdated ? (
-                        <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200 overflow-hidden">
-                          <span className="absolute inset-0 bg-green-200 opacity-20 animate-pulse"></span>
-                          <span className="relative flex items-center gap-1">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            AI Enhanced
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Original</span>
-                      )}
-                    </div>
-
-                    <div className="text-gray-600 leading-relaxed mb-6 line-clamp-3">
-                      {getPreview(article.content)}
-                    </div>
-                  </div>
-
-                  <motion.button
-                    className="w-full py-3 rounded-lg font-semibold text-sm transition-all bg-gray-50 text-gray-700 hover:bg-accent-primary hover:text-white flex items-center justify-center gap-2 group-hover:shadow-md"
-                    onClick={() => openArticle(article)}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Read Article
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                  </motion.button>
-                </motion.div>
-              )
-            })}
-          </motion.div>
+            {/* No Results Message */}
+            {filteredArticles.length === 0 && (
+              <motion.div
+                className="text-center py-16"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No articles found</h3>
+                <p className="text-gray-600 dark:text-gray-400">Try adjusting your search terms or filters</p>
+              </motion.div>
+            )}
+          </>
         )}
       </main>
 
