@@ -507,32 +507,17 @@ app.get('/api/articles/enhanced', (req, res) => {
 
         console.log('Found', rows.length, 'articles in database');
 
+        if (rows.length === 0) {
+            res.json({
+                "message":"success",
+                "data": []
+            });
+            return;
+        }
+
         const enhancedArticles = rows.map(article => {
             const fullContent = article.updated_content || article.content;
-            
-            // Safely apply AI functions with error handling
-            let sentiment = { score: 0, label: 'neutral' };
-            let qualityScore = 5;
-            let namedEntities = [];
-            
-            try {
-                sentiment = analyzeSentiment(fullContent);
-            } catch (error) {
-                console.error('Sentiment analysis failed for article', article.id, error.message);
-            }
-            
-            try {
-                qualityScore = calculateQualityScore({...article, content: fullContent});
-            } catch (error) {
-                console.error('Quality scoring failed for article', article.id, error.message);
-            }
-            
-            try {
-                namedEntities = extractNamedEntities(fullContent);
-            } catch (error) {
-                console.error('Named entity extraction failed for article', article.id, error.message);
-            }
-            
+
             return {
                 ...article,
                 summary: generateSummary(fullContent),
@@ -540,9 +525,9 @@ app.get('/api/articles/enhanced', (req, res) => {
                 category: categorizeContent(article.title, fullContent),
                 wordCount: fullContent.split(/\s+/).length,
                 isEnhanced: !!article.updated_content,
-                sentiment,
-                qualityScore,
-                namedEntities
+                sentiment: analyzeSentiment(fullContent),
+                qualityScore: calculateQualityScore({...article, content: fullContent}),
+                namedEntities: extractNamedEntities(fullContent)
             };
         });
 
