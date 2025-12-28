@@ -398,6 +398,17 @@ app.get('/api/test', (req, res) => {
     res.json({"message": "Server is working", "timestamp": new Date().toISOString()});
 });
 
+// Test database endpoint
+app.get('/api/test-db', (req, res) => {
+    db.get("SELECT COUNT(*) as count FROM articles", [], (err, row) => {
+        if (err) {
+            res.status(400).json({"error": err.message});
+            return;
+        }
+        res.json({"message": "Database working", "articleCount": row.count});
+    });
+});
+
 // Get all articles
 app.get('/api/articles', (req, res) => {
     db.all("SELECT * FROM articles", [], (err, rows) => {
