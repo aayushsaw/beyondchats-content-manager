@@ -395,7 +395,7 @@ function getPersonalizedRecommendations(userBehavior, allArticles, maxRecommenda
 
 // Test endpoint
 app.get('/api/test', (req, res) => {
-    res.json({"message": "Server is working", "timestamp": new Date().toISOString()});
+    res.json({"message": "Server is working - updated", "timestamp": new Date().toISOString()});
 });
 
 // Test database endpoint
