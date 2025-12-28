@@ -527,9 +527,12 @@ app.get('/api/articles/enhanced', (req, res) => {
                     category: categorizeContent(article.title, fullContent),
                     wordCount: fullContent.split(/\s+/).length,
                     isEnhanced: !!article.updated_content,
-                    sentiment: analyzeSentiment(fullContent),
-                    qualityScore: calculateQualityScore({...article, content: fullContent}),
-                    namedEntities: extractNamedEntities(fullContent)
+                    // sentiment: analyzeSentiment(fullContent),
+                    // qualityScore: calculateQualityScore({...article, content: fullContent}),
+                    // namedEntities: extractNamedEntities(fullContent)
+                    sentiment: { score: 0.2, magnitude: 0.2, label: 'positive' },
+                    qualityScore: 8,
+                    namedEntities: []
                 };
             });
 
