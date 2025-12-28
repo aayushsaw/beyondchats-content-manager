@@ -23,8 +23,56 @@ This project successfully implements all 3 phases of the challenge plus enhanced
 - **📱 Responsive Design**: Optimized for all screen sizes
 - **🤖 AI-Powered Search**: Intelligent semantic search with fallback to regular search
 - **📈 Real Data Only**: No mock/demo data - everything is scraped from live BeyondChats content
+- **🧠 Smart Summarization**: AI-generated article summaries using extractive summarization
+- **⏱️ Reading Time Estimation**: Automatic calculation based on word count (200 WPM)
+- **🏷️ Content Categorization**: Intelligent categorization (AI & Technology, Healthcare, Business & Marketing, Web Development, General)
+- **🔗 Related Articles**: Jaccard similarity-based recommendations
+- **📊 Enhanced Metadata**: Word count, category tags, and AI enhancement indicators
 
 **Technical Note**: Due to the local environment lacking PHP/Composer, the Backend (Phase 1) was implemented in **Node.js/Express** instead of Laravel. It fulfills all functional requirements (CRUD, Database, API).
+
+---
+
+## 🤖 AI Features
+
+### **Smart Article Summarization**
+- **Algorithm**: Extractive summarization using sentence scoring based on word frequency
+- **Display**: AI-generated summaries shown in article cards and modal
+- **Purpose**: Helps users quickly understand article content before reading
+
+### **Reading Time Estimation**
+- **Calculation**: Word count ÷ 200 words per minute (industry standard)
+- **Display**: "X min read" shown next to publication date
+- **Accuracy**: Accounts for actual content length, not just character count
+
+### **Automatic Content Categorization**
+- **Categories**: AI & Technology, Healthcare, Business & Marketing, Web Development, General
+- **Algorithm**: Keyword-based matching requiring 2+ matches for categorization
+- **Display**: Category tags on article cards with filter support
+
+### **AI-Powered Search**
+- **Features**: Semantic search with weighted scoring (title matches higher)
+- **Debouncing**: 500ms delay to prevent excessive API calls
+- **Fallback**: Graceful degradation to regular search if AI search fails
+- **Scoring**: Title matches (10 points), content matches (2 points), semantic matches (1-3 points)
+
+### **Related Articles Recommendations**
+- **Algorithm**: Jaccard similarity comparing word overlap between articles
+- **Display**: Up to 3 related articles in modal with summaries
+- **Performance**: Efficient set-based similarity calculation
+
+### **Enhanced Article Metadata**
+- **Word Count**: Automatic calculation for all articles
+- **AI Enhancement Indicators**: Visual badges for AI-enhanced content
+- **Smart Previews**: Intelligent content truncation preserving meaning
+
+### **API Endpoints**
+```
+GET /api/articles/enhanced     # Articles with AI metadata
+GET /api/articles/:id/enhanced # Single enhanced article
+GET /api/articles/:id/related  # Related articles (Jaccard similarity)
+GET /api/articles/search/ai    # AI-powered semantic search
+```
 
 ---
 
@@ -34,6 +82,7 @@ This project successfully implements all 3 phases of the challenge plus enhanced
 *   **Backend**: Node.js, Express
 *   **Database**: SQLite (`articles.db`)
 *   **Automation**: Puppeteer (Headless Browser), Axios, Cheerio
+*   **AI/NLP**: Natural (tokenization, text processing, semantic analysis)
 *   **UI Features**: Dark Mode, Search & Filtering, Bookmarks, Reading Progress, Responsive Design
 
 ---
@@ -118,13 +167,20 @@ node update_article.js
 
 The backend provides a REST API for managing articles:
 
+### **Standard CRUD Endpoints:**
 - `GET /api/articles` - Retrieve all articles
 - `GET /api/articles/:id` - Retrieve a single article by ID
 - `POST /api/articles` - Create a new article
 - `PUT /api/articles/:id` - Update an article by ID
 - `DELETE /api/articles/:id` - Delete an article by ID
 
-Example response for `GET /api/articles`:
+### **AI-Enhanced Endpoints:**
+- `GET /api/articles/enhanced` - Retrieve all articles with AI metadata (summaries, categories, reading time)
+- `GET /api/articles/:id/enhanced` - Retrieve single article with AI enhancements
+- `GET /api/articles/:id/related` - Get related articles using Jaccard similarity
+- `GET /api/articles/search/ai?q=query` - AI-powered semantic search
+
+Example response for `GET /api/articles/enhanced`:
 
 ```json
 {
@@ -137,6 +193,11 @@ Example response for `GET /api/articles`:
       "content": "<p>Article content...</p>",
       "published_date": "2025-02-26",
       "updated_content": "Enhanced content with AI insights...",
+      "summary": "AI-generated summary of the article...",
+      "readingTime": 5,
+      "category": "Business & Marketing",
+      "wordCount": 1200,
+      "isEnhanced": true,
       "created_at": "2025-02-26T00:00:00.000Z"
     }
   ]

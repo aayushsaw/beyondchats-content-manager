@@ -56,7 +56,7 @@ function App() {
   const [readingProgress, setReadingProgress] = useState(0)
   const [relatedArticles, setRelatedArticles] = useState([])
   const [isAISearch, setIsAISearch] = useState(false)
-  const [error, setError] = useState(null)
+  const [searchTimeout, setSearchTimeout] = useState(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
@@ -69,7 +69,7 @@ function App() {
       setError(null) // Reset error state
       try {
         const [response] = await Promise.all([
-          axios.get(`${API_URL}`),
+          axios.get(`${API_URL.replace('/articles', '/articles/enhanced')}`),
           new Promise(resolve => setTimeout(resolve, 800))
         ]);
         const sorted = response.data.data.sort((a, b) => b.id - a.id)
@@ -111,6 +111,9 @@ function App() {
       filtered = filtered.filter(article => article.updated_content)
     } else if (filterType === 'original') {
       filtered = filtered.filter(article => !article.updated_content)
+    } else if (filterType.startsWith('category-')) {
+      const category = filterType.replace('category-', '')
+      filtered = filtered.filter(article => article.category === category)
     }
 
     setFilteredArticles(filtered)
@@ -130,7 +133,7 @@ function App() {
 
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/search/ai?q=${encodeURIComponent(query)}`)
+      const response = await axios.get(`${API_URL.replace('/articles', '/articles/search/ai')}?q=${encodeURIComponent(query)}`)
       setFilteredArticles(response.data.data)
     } catch (error) {
       console.error("AI search failed:", error)
@@ -147,7 +150,7 @@ function App() {
 
     // Fetch related articles
     try {
-      const response = await axios.get(`${API_URL}/${article.id}/related`)
+      const response = await axios.get(`${API_URL.replace('/articles', '/articles/')}${article.id}/related`)
       setRelatedArticles(response.data.data)
     } catch (error) {
       console.error("Error fetching related articles, using mock data", error)
@@ -272,22 +275,29 @@ function App() {
             </div>
 
             {/* Filter Buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {[
                 { key: 'all', label: 'All', count: articles.length },
                 { key: 'enhanced', label: 'AI Enhanced', count: articles.filter(a => a.updated_content).length },
-                { key: 'original', label: 'Original', count: articles.filter(a => !a.updated_content).length }
+                { key: 'original', label: 'Original', count: articles.filter(a => !a.updated_content).length },
+                ...Array.from(new Set(articles.map(a => a.category).filter(Boolean))).slice(0, 3).map(category => ({
+                  key: `category-${category}`,
+                  label: category,
+                  count: articles.filter(a => a.category === category).length
+                }))
               ].map(({ key, label, count }) => (
                 <button
                   key={key}
                   onClick={() => setFilterType(key)}
-                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm ${
                     filterType === key
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
                   }`}
                 >
                   {label} ({count})
+                </button>
+              ))}
                 </button>
               ))}
             </div>
@@ -391,7 +401,7 @@ function App() {
                             <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            {article.readingTime} min
+                            {article.readingTime || 1} min read • {article.wordCount || 0} words
                           </span>
                           {isUpdated ? (
                             <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
@@ -407,14 +417,12 @@ function App() {
                         </div>
                       </div>
 
-                      {/* Categories */}
-                      {article.categories && article.categories.length > 0 && (
+                      {/* Category */}
+                      {article.category && (
                         <div className="flex flex-wrap gap-1 mb-4">
-                          {article.categories.slice(0, 2).map((category, index) => (
-                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              {category}
-                            </span>
-                          ))}
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                            {article.category}
+                          </span>
                         </div>
                       )}
 
