@@ -515,46 +515,33 @@ app.get('/api/articles/enhanced', (req, res) => {
             return;
         }
 
-        const enhancedArticles = rows.map(article => {
-            const fullContent = article.updated_content || article.content;
+        try {
+            const enhancedArticles = rows.map(article => {
+                const fullContent = article.updated_content || article.content;
+                console.log('Processing article:', article.id);
 
-            return {
-                ...article,
-                summary: generateSummary(fullContent),
-                readingTime: estimateReadingTime(fullContent),
-                category: categorizeContent(article.title, fullContent),
-                wordCount: fullContent.split(/\s+/).length,
-                isEnhanced: !!article.updated_content,
-                sentiment: analyzeSentiment(fullContent),
-                qualityScore: calculateQualityScore({...article, content: fullContent}),
-                namedEntities: extractNamedEntities(fullContent)
-            };
-        });
+                return {
+                    ...article,
+                    summary: generateSummary(fullContent),
+                    readingTime: estimateReadingTime(fullContent),
+                    category: categorizeContent(article.title, fullContent),
+                    wordCount: fullContent.split(/\s+/).length,
+                    isEnhanced: !!article.updated_content,
+                    sentiment: analyzeSentiment(fullContent),
+                    qualityScore: calculateQualityScore({...article, content: fullContent}),
+                    namedEntities: extractNamedEntities(fullContent)
+                };
+            });
 
-        console.log('Returning', enhancedArticles.length, 'enhanced articles');
-        res.json({
-            "message":"success",
-            "data": enhancedArticles
-        });
-    });
-});
-
-// Enhanced Single Article Endpoint
-app.get('/api/articles/:id/enhanced', (req, res) => {
-    const sql = "SELECT * FROM articles WHERE id = ?";
-    const params = [req.params.id];
-    db.get(sql, params, (err, row) => {
-        if (err) {
-            res.status(400).json({"error":err.message});
-            return;
+            console.log('Returning', enhancedArticles.length, 'enhanced articles');
+            res.json({
+                "message":"success",
+                "data": enhancedArticles
+            });
+        } catch (error) {
+            console.error('Error processing enhanced articles:', error);
+            res.status(500).json({"error": "Internal server error during processing"});
         }
-        if (!row) {
-            res.status(404).json({"error": "Article not found"});
-            return;
-        }
-
-        const enhancedArticle = {
-            ...row,
             summary: generateSummary(row.content),
             readingTime: estimateReadingTime(row.content),
             category: categorizeContent(row.title, row.content),
