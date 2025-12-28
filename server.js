@@ -688,7 +688,7 @@ app.get('/api/articles/:id/analysis', (req, res) => {
     });
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server running on port ${port}`);
-    console.log('Test endpoint available at http://localhost:' + port + '/api/test');
+    console.log(`Test endpoint available at http://localhost:${port}/api/test`);
 });

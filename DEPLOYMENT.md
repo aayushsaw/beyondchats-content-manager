@@ -14,7 +14,7 @@
    - **Name**: `beyondchats-backend`
    - **Runtime**: `Node`
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Start Command**: `npm start` (this runs `node server.js`)
    - **Environment**: `Production`
 
 ### Step 3: Environment Variables
@@ -60,3 +60,19 @@ SQLite works for development but data resets on each deployment. Consider:
 
 ### API Connection
 Make sure your frontend uses the correct API URL for the deployed backend.
+
+## Troubleshooting Render Deployment
+
+### Common Issues:
+
+1. **Port Binding**: Server now binds to `0.0.0.0` for cloud compatibility
+2. **Build Failures**: Make sure all dependencies are in `package.json`
+3. **Database Issues**: SQLite works but data resets on redeploy
+4. **CORS Errors**: Backend allows your Render domain automatically
+
+### Environment Variables:
+- `NODE_ENV=production` (set automatically by Render)
+- `PORT=10000` (set automatically by Render)
+
+### Health Check:
+Render will ping your `/api/test` endpoint to check if the service is healthy.
