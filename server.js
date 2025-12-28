@@ -515,47 +515,11 @@ app.get('/api/articles/enhanced', (req, res) => {
             res.status(400).json({"error":err.message});
             return;
         }
-
-        console.log('Found', rows.length, 'articles in database');
-
-        if (rows.length === 0) {
-            res.json({
-                "message":"success",
-                "data": []
-            });
-            return;
-        }
-
-        try {
-            const enhancedArticles = rows.map(article => {
-                const fullContent = article.updated_content || article.content;
-                console.log('Processing article:', article.id);
-
-                return {
-                    ...article,
-                    summary: generateSummary(fullContent),
-                    readingTime: estimateReadingTime(fullContent),
-                    category: categorizeContent(article.title, fullContent),
-                    wordCount: fullContent.split(/\s+/).length,
-                    isEnhanced: !!article.updated_content,
-                    // sentiment: analyzeSentiment(fullContent),
-                    // qualityScore: calculateQualityScore({...article, content: fullContent}),
-                    // namedEntities: extractNamedEntities(fullContent)
-                    sentiment: { score: 0.2, magnitude: 0.2, label: 'positive' },
-                    qualityScore: 8,
-                    namedEntities: []
-                };
-            });
-
-            console.log('Returning', enhancedArticles.length, 'enhanced articles');
-            res.json({
-                "message":"success",
-                "data": enhancedArticles
-            });
-        } catch (error) {
-            console.error('Error processing enhanced articles:', error);
-            res.status(500).json({"error": "Internal server error during processing"});
-        }
+        console.log('Found', rows.length, 'articles');
+        res.json({
+            "message":"success",
+            "data": rows
+        });
     });
 });
 
