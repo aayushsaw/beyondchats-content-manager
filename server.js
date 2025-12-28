@@ -556,17 +556,6 @@ app.get('/api/articles/enhanced', (req, res) => {
             console.error('Error processing enhanced articles:', error);
             res.status(500).json({"error": "Internal server error during processing"});
         }
-            summary: generateSummary(row.content),
-            readingTime: estimateReadingTime(row.content),
-            category: categorizeContent(row.title, row.content),
-            wordCount: row.content.split(/\s+/).length,
-            isEnhanced: !!row.updated_content
-        };
-
-        res.json({
-            "message":"success",
-            "data": enhancedArticle
-        });
     });
 });
 
