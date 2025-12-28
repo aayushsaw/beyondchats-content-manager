@@ -9,51 +9,80 @@ const port = process.env.PORT || 3001;
 const db = new sqlite3.Database('./articles.db');
 
 // Initialize database
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS articles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT,
-        url TEXT,
-        content TEXT,
-        published_date TEXT,
-        updated_content TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-    
-    // Insert some sample data if table is empty
-    db.get("SELECT COUNT(*) as count FROM articles", [], (err, row) => {
-        if (!err && row.count === 0) {
-            console.log('Database is empty, inserting sample data...');
-            const sampleArticles = [
-                {
-                    title: 'The Future of AI in Healthcare',
-                    url: 'https://beyondchats.com/blogs/ai-healthcare',
-                    content: '<p>Artificial intelligence is revolutionizing healthcare by providing doctors with powerful tools for diagnosis and treatment. Machine learning algorithms can analyze medical images, predict patient outcomes, and even assist in drug discovery.</p>',
-                    published_date: '2025-12-28'
-                },
-                {
-                    title: 'Building Better Chatbots with Machine Learning',
-                    url: 'https://beyondchats.com/blogs/chatbots-ml',
-                    content: '<p>Modern chatbots powered by machine learning can understand context, maintain conversations, and provide personalized responses. This article explores the latest techniques in conversational AI.</p>',
-                    published_date: '2025-12-27'
-                },
-                {
-                    title: 'Google Ads Optimization Strategies',
-                    url: 'https://beyondchats.com/blogs/google-ads',
-                    content: '<p>Effective Google Ads campaigns require continuous optimization. Learn about A/B testing, keyword research, and performance monitoring to maximize your ROI.</p>',
-                    published_date: '2025-12-26'
+function initializeDatabase() {
+    return new Promise((resolve, reject) => {
+        db.serialize(() => {
+            db.run(`CREATE TABLE IF NOT EXISTS articles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT,
+                url TEXT,
+                content TEXT,
+                published_date TEXT,
+                updated_content TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) {
+                    console.error('Error creating table:', err);
+                    reject(err);
+                    return;
                 }
-            ];
-            
-            const stmt = db.prepare("INSERT INTO articles (title, url, content, published_date) VALUES (?, ?, ?, ?)");
-            sampleArticles.forEach(article => {
-                stmt.run(article.title, article.url, article.content, article.published_date);
+                
+                // Check if table is empty and insert sample data
+                db.get("SELECT COUNT(*) as count FROM articles", [], (err, row) => {
+                    if (err) {
+                        console.error('Error checking table:', err);
+                        reject(err);
+                        return;
+                    }
+                    
+                    if (row.count === 0) {
+                        console.log('Database is empty, inserting sample data...');
+                        const sampleArticles = [
+                            {
+                                title: 'The Future of AI in Healthcare',
+                                url: 'https://beyondchats.com/blogs/ai-healthcare',
+                                content: '<p>Artificial intelligence is revolutionizing healthcare by providing doctors with powerful tools for diagnosis and treatment. Machine learning algorithms can analyze medical images, predict patient outcomes, and even assist in drug discovery.</p>',
+                                published_date: '2025-12-28'
+                            },
+                            {
+                                title: 'Building Better Chatbots with Machine Learning',
+                                url: 'https://beyondchats.com/blogs/chatbots-ml',
+                                content: '<p>Modern chatbots powered by machine learning can understand context, maintain conversations, and provide personalized responses. This article explores the latest techniques in conversational AI.</p>',
+                                published_date: '2025-12-27'
+                            },
+                            {
+                                title: 'Google Ads Optimization Strategies',
+                                url: 'https://beyondchats.com/blogs/google-ads',
+                                content: '<p>Effective Google Ads campaigns require continuous optimization. Learn about A/B testing, keyword research, and performance monitoring to maximize your ROI.</p>',
+                                published_date: '2025-12-26'
+                            }
+                        ];
+                        
+                        const stmt = db.prepare("INSERT INTO articles (title, url, content, published_date) VALUES (?, ?, ?, ?)");
+                        let completed = 0;
+                        
+                        sampleArticles.forEach(article => {
+                            stmt.run(article.title, article.url, article.content, article.published_date, (err) => {
+                                if (err) {
+                                    console.error('Error inserting sample data:', err);
+                                }
+                                completed++;
+                                if (completed === sampleArticles.length) {
+                                    stmt.finalize();
+                                    console.log('Sample data inserted successfully');
+                                    resolve();
+                                }
+                            });
+                        });
+                    } else {
+                        console.log('Database already has', row.count, 'articles');
+                        resolve();
+                    }
+                });
             });
-            stmt.finalize();
-            console.log('Sample data inserted successfully');
-        }
+        });
     });
-});
+}
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
@@ -735,7 +764,15 @@ app.get('/api/articles/:id/analysis', (req, res) => {
     });
 });
 
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
-    console.log(`Test endpoint available at http://localhost:${port}/api/test`);
+// Initialize database before starting server
+initializeDatabase().then(() => {
+    console.log('Database initialized successfully');
+    
+    app.listen(port, '0.0.0.0', () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`Test endpoint available at http://localhost:${port}/api/test`);
+    });
+}).catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
 });
