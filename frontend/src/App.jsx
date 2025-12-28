@@ -3,7 +3,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Use the Environment Variable if available, otherwise fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/articles';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
