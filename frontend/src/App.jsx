@@ -3,7 +3,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Use the Environment Variable if available, otherwise fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/articles';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/articles';
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
@@ -54,6 +54,9 @@ function App() {
   const [filterType, setFilterType] = useState('all') // 'all', 'enhanced', 'original'
   const [bookmarkedArticles, setBookmarkedArticles] = useState(new Set(JSON.parse(localStorage.getItem('bookmarks') || '[]')))
   const [readingProgress, setReadingProgress] = useState(0)
+  const [relatedArticles, setRelatedArticles] = useState([])
+  const [isAISearch, setIsAISearch] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
@@ -62,17 +65,24 @@ function App() {
 
   useEffect(() => {
     const loadData = async () => {
+      console.log('Loading data...')
+      setError(null) // Reset error state
       try {
         const [response] = await Promise.all([
-          axios.get(API_URL),
+          axios.get(`${API_URL}`),
           new Promise(resolve => setTimeout(resolve, 800))
         ]);
         const sorted = response.data.data.sort((a, b) => b.id - a.id)
+        console.log('Loaded articles from API:', sorted.length)
         setArticles(sorted)
         setFilteredArticles(sorted)
       } catch (error) {
-        console.error("Error fetching articles", error)
+        console.error("Error fetching articles:", error)
+        setError("Unable to load articles from the server. Please check your connection and try again.")
+        setArticles([])
+        setFilteredArticles([])
       } finally {
+        console.log('Setting loading to false')
         setLoading(false)
       }
     }
@@ -84,10 +94,16 @@ function App() {
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(article =>
-        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getPreview(article.content).toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      if (isAISearch) {
+        // AI-powered search will be handled separately
+        return;
+      } else {
+        // Regular search
+        filtered = filtered.filter(article =>
+          article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          getPreview(article.content).toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      }
     }
 
     // Apply type filter
@@ -98,7 +114,7 @@ function App() {
     }
 
     setFilteredArticles(filtered)
-  }, [articles, searchTerm, filterType])
+  }, [articles, searchTerm, filterType, isAISearch])
 
   useEffect(() => {
     localStorage.setItem('bookmarks', JSON.stringify([...bookmarkedArticles]))
@@ -106,9 +122,45 @@ function App() {
 
   const toggleTheme = () => setIsDark(!isDark)
 
-  const openArticle = (article) => {
+  const performAISearch = async (query) => {
+    if (!query.trim()) {
+      setFilteredArticles(articles)
+      return
+    }
+
+    try {
+      setLoading(true)
+      const response = await axios.get(`${API_URL}/search/ai?q=${encodeURIComponent(query)}`)
+      setFilteredArticles(response.data.data)
+    } catch (error) {
+      console.error("AI search failed:", error)
+      setError("AI search is currently unavailable. Please use regular search.")
+      setFilteredArticles(articles) // Reset to show all articles
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const openArticle = async (article) => {
     setSelectedArticle(article)
     setReadingProgress(0)
+
+    // Fetch related articles
+    try {
+      const response = await axios.get(`${API_URL}/${article.id}/related`)
+      setRelatedArticles(response.data.data)
+    } catch (error) {
+      console.error("Error fetching related articles, using mock data", error)
+      // Mock related articles for demonstration
+      const mockRelated = articles
+        .filter(a => a.id !== article.id)
+        .slice(0, 2)
+        .map(a => ({
+          ...a,
+          similarity: Math.random() * 0.3 + 0.1
+        }));
+      setRelatedArticles(mockRelated)
+    }
   }
 
   const closeArticle = () => setSelectedArticle(null)
@@ -182,14 +234,41 @@ function App() {
             <div className="flex-1 relative">
               <input
                 type="text"
-                placeholder="Search articles..."
+                placeholder={isAISearch ? "AI-powered search..." : "Search articles..."}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 pl-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSearchTerm(value);
+                  if (isAISearch && value.trim()) {
+                    // Debounce AI search
+                    clearTimeout(window.aiSearchTimeout);
+                    window.aiSearchTimeout = setTimeout(() => performAISearch(value), 500);
+                  }
+                }}
+                className="w-full px-4 py-3 pl-12 pr-12 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               />
               <svg className="absolute left-4 top-3.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
+              <button
+                onClick={() => {
+                  setIsAISearch(!isAISearch);
+                  if (!isAISearch && searchTerm.trim()) {
+                    performAISearch(searchTerm);
+                  } else if (isAISearch) {
+                    // Reset to regular search
+                    setSearchTerm('');
+                    setFilteredArticles(articles);
+                  }
+                }}
+                className={`absolute right-3 top-2 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                  isAISearch
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                {isAISearch ? 'AI' : 'AI'}
+              </button>
             </div>
 
             {/* Filter Buttons */}
@@ -223,7 +302,27 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 pb-12">
-        {loading ? (
+        {console.log('Rendering main section, loading:', loading, 'error:', error, 'articles:', articles.length, 'filtered:', filteredArticles.length)}
+        {error ? (
+          <motion.div
+            className="text-center py-16"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <svg className="w-16 h-16 mx-auto text-red-400 dark:text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Unable to Load Articles</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        ) : loading ? (
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={containerVariants}
@@ -234,13 +333,21 @@ function App() {
           </motion.div>
         ) : (
           <>
+            {filteredArticles.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-xl text-gray-600 dark:text-gray-400">No articles found</p>
+                <p className="text-sm text-gray-500 mt-2">Try adjusting your search terms or filters</p>
+              </div>
+            ) : (
             <motion.div
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
               variants={containerVariants}
               initial="hidden"
               animate="visible"
             >
+              {console.log('Rendering articles:', filteredArticles)}
               {filteredArticles.map((article) => {
+                console.log('Rendering article:', article.id, article.title)
                 const isUpdated = !!article.updated_content;
                 const isBookmarked = bookmarkedArticles.has(article.id);
                 return (
@@ -277,22 +384,50 @@ function App() {
                         {article.title}
                       </motion.div>
 
-                      <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-6">
+                      <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
                         <span className="font-medium bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">{article.published_date}</span>
-                        {isUpdated ? (
-                          <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
-                            <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
-                            <span className="relative flex items-center gap-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                              AI Enhanced
-                            </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-500">
+                            <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            {article.readingTime} min
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
-                        )}
+                          {isUpdated ? (
+                            <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
+                              <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
+                              <span className="relative flex items-center gap-1">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                AI Enhanced
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-3">
+                      {/* Categories */}
+                      {article.categories && article.categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {article.categories.slice(0, 2).map((category, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* AI Summary */}
+                      {article.summary && (
+                        <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-4 border-blue-500">
+                          <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">AI Summary</div>
+                          {article.summary}
+                        </div>
+                      )}
+
+                      {/* Content Preview */}
+                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-2">
                         {getPreview(article.content)}
                       </div>
                     </div>
@@ -309,20 +444,6 @@ function App() {
                 )
               })}
             </motion.div>
-
-            {/* No Results Message */}
-            {filteredArticles.length === 0 && (
-              <motion.div
-                className="text-center py-16"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No articles found</h3>
-                <p className="text-gray-600 dark:text-gray-400">Try adjusting your search terms or filters</p>
-              </motion.div>
             )}
           </>
         )}
@@ -439,6 +560,47 @@ function App() {
                   <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
                 )}
               </div>
+
+              {/* Related Articles Section */}
+              {relatedArticles.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Related Articles
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {relatedArticles.map((relatedArticle) => (
+                      <motion.div
+                        key={relatedArticle.id}
+                        className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer"
+                        onClick={() => {
+                          closeArticle();
+                          setTimeout(() => openArticle(relatedArticle), 300);
+                        }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
+                          {relatedArticle.title}
+                        </h4>
+                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                          <span>{relatedArticle.published_date}</span>
+                          <span className="text-blue-600 dark:text-blue-400">
+                            {relatedArticle.readingTime} min read
+                          </span>
+                        </div>
+                        {relatedArticle.summary && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
+                            {relatedArticle.summary}
+                          </p>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -4,11 +4,16 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const port = 3000;
+const port = 3001;
 const db = new sqlite3.Database('./articles.db');
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+    res.json({"message": "Server is working", "timestamp": new Date().toISOString()});
+});
 
 // Get all articles
 app.get('/api/articles', (req, res) => {
@@ -73,17 +78,17 @@ app.put('/api/articles/:id', (req, res) => {
         updated_content: req.body.updated_content
     }
     db.run(
-        `UPDATE articles set 
-           title = COALESCE(?,title), 
-           url = COALESCE(?,url), 
-           content = COALESCE(?,content), 
+        `UPDATE articles set
+           title = COALESCE(?,title),
+           url = COALESCE(?,url),
+           content = COALESCE(?,content),
            published_date = COALESCE(?,published_date),
-           updated_content = COALESCE(?,updated_content) 
+           updated_content = COALESCE(?,updated_content)
            WHERE id = ?`,
         [data.title, data.url, data.content, data.published_date, data.updated_content, req.params.id],
         function (err, result) {
             if (err){
-                res.status(400).json({"error": res.message})
+                res.status(400).json({"error": err.message})
                 return;
             }
             res.json({
@@ -100,7 +105,7 @@ app.delete('/api/articles/:id', (req, res) => {
         req.params.id,
         function (err, result) {
             if (err){
-                res.status(400).json({"error": res.message})
+                res.status(400).json({"error": err.message})
                 return;
             }
             res.json({"message":"deleted", changes: this.changes})
@@ -109,4 +114,5 @@ app.delete('/api/articles/:id', (req, res) => {
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
+    console.log('Test endpoint available at http://localhost:' + port + '/api/test');
 });

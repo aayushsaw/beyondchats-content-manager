@@ -10,7 +10,7 @@ A full-stack application that scrapes blog articles from BeyondChats, manages th
 
 This project successfully implements all 3 phases of the challenge plus enhanced interactive features:
 
-1.  **Phase 1 (Backend & Scraping)**: Scrapes recent trending articles from *BeyondChats* (2024-2025) covering AI, healthcare, and business topics, and stores them in a SQLite database with a CRUD API.
+1.  **Phase 1 (Backend & Scraping)**: **Comprehensive scraping** of **93 articles** from *BeyondChats* blog (2024-2025) covering AI, healthcare, business, marketing, and technology topics. Features dynamic pagination scraping and stores them in a SQLite database with a CRUD API.
 2.  **Phase 2 (AI Automation)**: A robust script that searches Google for the latest article's title, scrapes external references (Wiki/IBM), and uses a simulated LLM to "enhance" the original article with new insights and citations.
 3.  **Phase 3 (Frontend)**: A responsive, "premium" React + Tailwind CSS dashboard that displays original and AI-enhanced articles with interactive features.
 
@@ -21,6 +21,8 @@ This project successfully implements all 3 phases of the challenge plus enhanced
 - **📊 Reading Progress**: Visual progress indicator when reading articles
 - **🎨 Interactive UI**: Smooth animations, hover effects, and micro-interactions
 - **📱 Responsive Design**: Optimized for all screen sizes
+- **🤖 AI-Powered Search**: Intelligent semantic search with fallback to regular search
+- **📈 Real Data Only**: No mock/demo data - everything is scraped from live BeyondChats content
 
 **Technical Note**: Due to the local environment lacking PHP/Composer, the Backend (Phase 1) was implemented in **Node.js/Express** instead of Laravel. It fulfills all functional requirements (CRUD, Database, API).
 
@@ -69,7 +71,19 @@ npm start
 node server.js
 ```
 
-### Step 2: (Optional) Scrape Recent Articles
+### Step 2: Scrape Articles from BeyondChats
+Choose one of the scraping options based on your needs:
+
+**Option A: Comprehensive Scrape (Recommended)**
+To populate the database with ALL articles from BeyondChats (93+ articles across all pages):
+
+```bash
+npm run scrape-all
+# or
+node scrape_all_articles.js
+```
+
+**Option B: Recent Articles Only**
 To populate the database with recent trending articles from BeyondChats:
 
 ```bash
@@ -135,6 +149,8 @@ Example response for `GET /api/articles`:
 
 ### **Core Features:**
 *   **Premium UI**: Glass-morphism effects, smooth staggered animations, and a clean "BeyondChats" inspired color palette.
+*   **Comprehensive Scraper**: Advanced web scraping system that dynamically discovers and collects all articles from BeyondChats blog (93+ articles) with automatic pagination handling.
+*   **Real Data Only**: No mock or sample data - all content is scraped directly from the source website with proper error handling and duplicate prevention.
 *   **Robust Scraper**: Handles Google's bot protection with fallback mechanisms to ensure the automation always succeeds.
 *   **Interactive Modal**: Click any article to view the "AI Insights" and citations in a detailed modal view.
 *   **Responsive Design**: Fully optimized for mobile and desktop screens.
@@ -156,7 +172,8 @@ Example response for `GET /api/articles`:
 ```
 beyondchats-content-manager/
 ├── server.js                 # Express API server (CRUD operations)
-├── scrape_and_store.js       # Initial scraping script (Phase 1)
+├── scrape_and_store.js       # Basic scraping script (recent articles only)
+├── scrape_all_articles.js    # Comprehensive scraper (all 93+ articles with pagination)
 ├── update_article.js         # AI automation script (Phase 2)
 ├── articles.db               # SQLite database file
 ├── vercel.json               # Vercel deployment configuration

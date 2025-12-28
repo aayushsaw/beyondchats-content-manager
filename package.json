@@ -6,10 +6,17 @@
   "scripts": {
     "start": "node server.js",
     "scrape": "node scrape_and_store.js",
+    "scrape-all": "node scrape_all_articles.js",
     "update": "node update_article.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["content-manager", "scraping", "ai", "react", "express"],
+  "keywords": [
+    "content-manager",
+    "scraping",
+    "ai",
+    "react",
+    "express"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -19,6 +26,7 @@
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "natural": "^8.1.0",
     "puppeteer": "^24.34.0",
     "sqlite3": "^5.1.7"
   }
