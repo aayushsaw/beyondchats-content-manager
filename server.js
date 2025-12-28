@@ -5,10 +5,15 @@ const cors = require('cors');
 const natural = require('natural');
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 const db = new sqlite3.Database('./articles.db');
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://beyondchats-content-manager.onrender.com', 'https://your-frontend-domain.com'] 
+    : 'http://localhost:5173',
+  credentials: true
+}));
 app.use(bodyParser.json());
 
 // AI Functions
