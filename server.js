@@ -509,11 +509,6 @@ app.delete('/api/articles/:id', (req, res) => {
 // AI-Enhanced Articles Endpoint
 app.get('/api/articles/enhanced', (req, res) => {
     console.log('Enhanced articles endpoint called');
-    
-    // Send immediate response to test
-    res.json({"message":"success", "data": []});
-    return;
-    
     db.all("SELECT * FROM articles", [], (err, rows) => {
         if (err) {
             console.error('Database error:', err);
