@@ -86,7 +86,7 @@ function initializeDatabase() {
 
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://beyondchats-backend-p8s9.onrender.com', 'https://your-frontend-domain.com'] 
+    ? ['https://beyondchats-backend-p8s9.onrender.com', 'https://beyondchats-content-manager.vercel.app', 'https://your-frontend-domain.com'] 
     : 'http://localhost:5173',
   credentials: true
 }));
