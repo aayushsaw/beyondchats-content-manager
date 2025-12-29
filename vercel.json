@@ -11,5 +11,14 @@
   ],
   "env": {
     "VITE_API_URL": "https://beyondchats-backend-p8s9.onrender.com/api"
-  }
+  },
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
