@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Use the Environment Variable if available, otherwise fallback to localhost
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// Force port 3002 to bypass environment variable issues
+const API_URL = 'http://localhost:3002/api/articles';
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
@@ -58,6 +58,45 @@ function App() {
   const [isAISearch, setIsAISearch] = useState(false)
   const [searchTimeout, setSearchTimeout] = useState(null)
   const [userBehavior, setUserBehavior] = useState(() => JSON.parse(localStorage.getItem('userBehavior') || '{"viewedArticles":[],"bookmarkedArticles":[],"searchHistory":[]}'))
+
+  // Chat State
+  const [activeTab, setActiveTab] = useState('read')
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [isChatLoading, setIsChatLoading] = useState(false)
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !selectedArticle) return;
+
+    const userMsg = { role: 'user', content: chatInput };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput('');
+    setIsChatLoading(true);
+
+    try {
+      const history = chatMessages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+
+      const res = await fetch(`${API_URL}/${selectedArticle.id}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg.content, history })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const aiMsg = { role: 'ai', content: data.reply || "No response received." };
+      setChatMessages(prev => [...prev, aiMsg]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatMessages(prev => [...prev, { role: 'ai', content: "Sorry, I'm having trouble connecting to the AI. Please try again later." }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [selectedTopic, setSelectedTopic] = useState(null)
   const [topics, setTopics] = useState([])
@@ -71,13 +110,15 @@ function App() {
 
   useEffect(() => {
     const loadData = async () => {
-      console.log('Loading data...')
       setError(null) // Reset error state
       try {
+        const targetUrl = API_URL.replace('/articles', '/articles/enhanced');
+        console.log('Fetching articles from:', targetUrl);
+
         // Load articles first (required)
-        const articlesResponse = await axios.get(`${API_URL.replace('/articles', '/articles/enhanced')}`);
-        const sorted = articlesResponse.data.data.sort((a, b) => b.id - a.id)
-        console.log('Loaded articles from API:', sorted.length)
+        const articlesResponse = await axios.get(targetUrl);
+
+        const sorted = (articlesResponse.data.data || []).sort((a, b) => b.id - a.id)
         setArticles(sorted)
         setFilteredArticles(sorted)
 
@@ -313,11 +354,10 @@ function App() {
                     setFilteredArticles(articles);
                   }
                 }}
-                className={`absolute right-3 top-2 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
-                  isAISearch
-                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+                className={`absolute right-3 top-2 px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${isAISearch
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
               >
                 {isAISearch ? 'AI' : 'AI'}
               </button>
@@ -338,11 +378,10 @@ function App() {
                 <button
                   key={key}
                   onClick={() => setFilterType(key)}
-                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm ${
-                    filterType === key
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
-                  }`}
+                  className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 text-sm ${filterType === key
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                    }`}
                 >
                   {label} ({count})
                 </button>
@@ -380,11 +419,10 @@ function App() {
                     <button
                       key={index}
                       onClick={() => setSelectedTopic(topic.name)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        selectedTopic === topic.name
-                          ? 'bg-blue-600 text-white shadow-md'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400'
-                      }`}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedTopic === topic.name
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
                     >
                       {topic.name} ({topic.count})
                     </button>
@@ -486,146 +524,143 @@ function App() {
                 <p className="text-sm text-gray-500 mt-2">Try adjusting your search terms or filters</p>
               </div>
             ) : (
-            <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {console.log('Rendering articles:', filteredArticles)}
-              {filteredArticles.map((article) => {
-                console.log('Rendering article:', article.id, article.title)
-                const isUpdated = !!article.updated_content;
-                const isBookmarked = bookmarkedArticles.has(article.id);
-                return (
-                  <motion.div
-                    key={article.id}
-                    variants={itemVariants}
-                    className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between"
-                  >
-                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {console.log('Rendering articles:', filteredArticles)}
+                {filteredArticles.map((article) => {
+                  console.log('Rendering article:', article.id, article.title)
+                  const isUpdated = !!article.updated_content;
+                  const isBookmarked = bookmarkedArticles.has(article.id);
+                  return (
+                    <motion.div
+                      key={article.id}
+                      variants={itemVariants}
+                      className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:hover:shadow-2xl dark:hover:shadow-blue-500/10 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                    {/* Bookmark Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleBookmark(article.id);
-                      }}
-                      className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 ${
-                        isBookmarked
+                      {/* Bookmark Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleBookmark(article.id);
+                        }}
+                        className={`absolute top-4 right-4 p-2 rounded-full transition-all duration-200 ${isBookmarked
                           ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
                           : 'text-gray-400 hover:text-yellow-500 bg-white/80 dark:bg-gray-700/80 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
-                      </svg>
-                    </button>
-
-                    <div>
-                      <motion.div
-                        className="text-2xl font-bold mb-3 text-gray-900 dark:text-white cursor-pointer group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight pr-12"
-                        onClick={() => openArticle(article)}
-                        whileHover={{ x: 2 }}
+                          }`}
                       >
-                        {article.title}
-                      </motion.div>
+                        <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                        </svg>
+                      </button>
 
-                      <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        <span className="font-medium bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">{article.published_date}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 dark:text-gray-500">
-                            <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            {article.readingTime || 1} min read • {article.wordCount || 0} words
-                          </span>
-                          {isUpdated ? (
-                            <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
-                              <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
-                              <span className="relative flex items-center gap-1">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                AI Enhanced
-                              </span>
+                      <div>
+                        <motion.div
+                          className="text-2xl font-bold mb-3 text-gray-900 dark:text-white cursor-pointer group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight pr-12"
+                          onClick={() => openArticle(article)}
+                          whileHover={{ x: 2 }}
+                        >
+                          {article.title}
+                        </motion.div>
+
+                        <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 mb-4">
+                          <span className="font-medium bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded">{article.published_date}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-500">
+                              <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                              </svg>
+                              {article.readingTime || 1} min read • {article.wordCount || 0} words
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
+                            {isUpdated ? (
+                              <span className="relative inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 overflow-hidden">
+                                <span className="absolute inset-0 bg-green-200 dark:bg-green-800 opacity-20 animate-pulse"></span>
+                                <span className="relative flex items-center gap-1">
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                  AI Enhanced
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Original</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        {article.category && (
+                          <div className="flex flex-wrap gap-1 mb-4">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                              {article.category}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* AI Features */}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {/* Sentiment Indicator */}
+                          {article.sentiment && (
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${article.sentiment.score > 0.1 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' :
+                              article.sentiment.score < -0.1 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800' :
+                                'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600'
+                              }`}>
+                              <span className="mr-1">
+                                {article.sentiment.score > 0.1 ? '😊' : article.sentiment.score < -0.1 ? '😔' : '😐'}
+                              </span>
+                              {article.sentiment.label}
+                            </div>
+                          )}
+
+                          {/* Quality Score */}
+                          {article.qualityScore && (
+                            <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${article.qualityScore > 7 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' :
+                              article.qualityScore > 4 ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800' :
+                                'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                              }`}>
+                              <span className="mr-1">⭐</span>
+                              {article.qualityScore}/100
+                            </div>
+                          )}
+
+                          {/* Named Entities Count */}
+                          {article.namedEntities && article.namedEntities.length > 0 && (
+                            <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                              <span className="mr-1">🏷️</span>
+                              {article.namedEntities.length} entities
+                            </div>
                           )}
                         </div>
-                      </div>
 
-                      {/* Category */}
-                      {article.category && (
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                            {article.category}
-                          </span>
+                        {/* AI Summary */}
+                        {article.summary && (
+                          <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-4 border-blue-500">
+                            <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">AI Summary</div>
+                            {article.summary}
+                          </div>
+                        )}
+
+                        {/* Content Preview */}
+                        <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-2">
+                          {getPreview(article.content)}
                         </div>
-                      )}
-
-                      {/* AI Features */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {/* Sentiment Indicator */}
-                        {article.sentiment && (
-                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            article.sentiment.score > 0.1 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' :
-                            article.sentiment.score < -0.1 ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800' :
-                            'bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600'
-                          }`}>
-                            <span className="mr-1">
-                              {article.sentiment.score > 0.1 ? '😊' : article.sentiment.score < -0.1 ? '😔' : '😐'}
-                            </span>
-                            {article.sentiment.label}
-                          </div>
-                        )}
-
-                        {/* Quality Score */}
-                        {article.qualityScore && (
-                          <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            article.qualityScore > 7 ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800' :
-                            article.qualityScore > 4 ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800' :
-                            'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
-                          }`}>
-                            <span className="mr-1">⭐</span>
-                            {article.qualityScore}/10
-                          </div>
-                        )}
-
-                        {/* Named Entities Count */}
-                        {article.namedEntities && article.namedEntities.length > 0 && (
-                          <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                            <span className="mr-1">🏷️</span>
-                            {article.namedEntities.length} entities
-                          </div>
-                        )}
                       </div>
 
-                      {/* AI Summary */}
-                      {article.summary && (
-                        <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-4 border-blue-500">
-                          <div className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">AI Summary</div>
-                          {article.summary}
-                        </div>
-                      )}
-
-                      {/* Content Preview */}
-                      <div className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 line-clamp-2">
-                        {getPreview(article.content)}
-                      </div>
-                    </div>
-
-                    <motion.button
-                      className="w-full py-3 rounded-lg font-semibold text-sm transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 flex items-center justify-center gap-2 group-hover:shadow-md"
-                      onClick={() => openArticle(article)}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Read Article
-                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </motion.button>
-                  </motion.div>
-                )
-              })}
-            </motion.div>
+                      <motion.button
+                        className="w-full py-3 rounded-lg font-semibold text-sm transition-all bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 flex items-center justify-center gap-2 group-hover:shadow-md"
+                        onClick={() => openArticle(article)}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Read Article
+                        <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                      </motion.button>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
             )}
           </>
         )}
@@ -634,19 +669,19 @@ function App() {
       <AnimatePresence>
         {selectedArticle && (
           <motion.div
-            className="fixed inset-0 bg-gray-900/60 dark:bg-gray-900/80 flex justify-center items-center z-50 backdrop-blur-sm p-4"
+            className="fixed inset-0 bg-gray-900/40 dark:bg-gray-900/80 flex justify-center items-center z-50 backdrop-blur-md p-4 sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeArticle}
           >
             <motion.div
-              className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl dark:shadow-blue-500/10 relative overflow-hidden"
+              className="bg-white/95 dark:bg-gray-900/95 w-full max-w-5xl max-h-[92vh] rounded-3xl shadow-2xl dark:shadow-blue-500/10 relative overflow-hidden flex flex-col border border-white/20 dark:border-gray-700/50 backdrop-blur-xl"
               onClick={e => e.stopPropagation()}
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              exit={{ scale: 0.95, opacity: 0, y: 30 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
             >
               {/* Reading Progress Bar */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gray-200 dark:bg-gray-700 z-10">
@@ -660,12 +695,12 @@ function App() {
               </div>
 
               {/* Header */}
-              <div className="p-8 md:p-10 pr-16 border-b border-gray-100 dark:border-gray-700">
+              <div className="relative p-8 md:p-10 pr-16 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gradient-to-b from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-900/50">
                 <button
-                  className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="absolute top-6 right-6 group p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 border border-transparent hover:border-red-200 dark:hover:border-red-800"
                   onClick={closeArticle}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
 
                 <div className="flex items-start justify-between mb-4">
@@ -677,11 +712,10 @@ function App() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => toggleBookmark(selectedArticle.id)}
-                      className={`p-2 rounded-full transition-all duration-200 ${
-                        bookmarkedArticles.has(selectedArticle.id)
-                          ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
-                          : 'text-gray-400 hover:text-yellow-500 bg-gray-50 dark:bg-gray-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                      }`}
+                      className={`p-2 rounded-full transition-all duration-200 ${bookmarkedArticles.has(selectedArticle.id)
+                        ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                        : 'text-gray-400 hover:text-yellow-500 bg-gray-50 dark:bg-gray-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                        }`}
                     >
                       <svg className="w-5 h-5" fill={bookmarkedArticles.has(selectedArticle.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
@@ -717,177 +751,254 @@ function App() {
                 </div>
               </div>
 
-              {/* Content */}
-              <div
-                className="p-8 md:p-10 prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 overflow-y-auto max-h-[60vh]"
-                onScroll={handleScroll}
-              >
-                {selectedArticle.updated_content ? (
-                  <div className="animate-fadeIn">
-                    <div className="mb-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800 rounded-xl relative overflow-hidden">
-                      <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-green-200 dark:bg-green-800 rounded-full opacity-20 blur-xl"></div>
-                      <div className="flex items-start gap-4 relative z-10">
-                        <div className="bg-green-100 dark:bg-green-800 p-2 rounded-lg text-green-600 dark:text-green-400 mt-1">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        </div>
-                        <div>
-                          <h3 className="text-green-900 dark:text-green-100 font-bold text-lg mb-1 mt-0">AI Enhanced Insights</h3>
-                          <p className="text-green-800 dark:text-green-300 text-sm m-0 leading-relaxed">This article has been updated with the latest information from verified external sources.</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div dangerouslySetInnerHTML={{ __html: selectedArticle.updated_content }} />
-                  </div>
-                ) : (
-                  <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
-                )}
+              {/* Tabs */}
+              <div className="flex gap-4 px-8 md:px-10 mt-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-[80px] z-10">
+                <button
+                  className={`pb-4 pt-2 px-1 font-medium transition-colors relative ${activeTab === 'read' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                  onClick={() => setActiveTab('read')}
+                >
+                  Read Article
+                  {activeTab === 'read' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400" />}
+                </button>
+                <button
+                  className={`pb-4 pt-2 px-1 font-medium transition-colors relative ${activeTab === 'chat' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'}`}
+                  onClick={() => setActiveTab('chat')}
+                >
+                  Chat with AI
+                  {activeTab === 'chat' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 dark:bg-blue-400" />}
+                </button>
               </div>
 
-              {/* AI Analysis Section */}
-              {(selectedArticle.sentiment || selectedArticle.qualityScore || selectedArticle.namedEntities || selectedArticle.topics) && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                    </svg>
-                    AI Analysis
-                  </h3>
+              {/* Scrollable Body */}
+              <div
+                className="overflow-y-auto p-8 md:p-10"
+                onScroll={handleScroll}
+                style={{ maxHeight: 'calc(90vh - 200px)' }} // Fallback/Estimate
+              >
+                {activeTab === 'read' ? (
+                  <div>
+                    {/* Content */}
+                    <div
+                      className="prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300"
+                    >
+                      {selectedArticle.updated_content ? (
+                        <div className="animate-fadeIn">
+                          <div className="mb-8 p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-100 dark:border-green-800 rounded-xl relative overflow-hidden">
+                            <div className="absolute top-0 right-0 -mt-2 -mr-2 w-16 h-16 bg-green-200 dark:bg-green-800 rounded-full opacity-20 blur-xl"></div>
+                            <div className="flex items-start gap-4 relative z-10">
+                              <div className="bg-green-100 dark:bg-green-800 p-2 rounded-lg text-green-600 dark:text-green-400 mt-1">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                              </div>
+                              <div>
+                                <h3 className="text-green-900 dark:text-green-100 font-bold text-lg mb-1 mt-0">AI Enhanced Insights</h3>
+                                <p className="text-green-800 dark:text-green-300 text-sm m-0 leading-relaxed">This article has been updated with the latest information from verified external sources.</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div dangerouslySetInnerHTML={{ __html: selectedArticle.updated_content }} />
+                        </div>
+                      ) : (
+                        <div dangerouslySetInnerHTML={{ __html: selectedArticle.content }} />
+                      )}
+                    </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Sentiment Analysis */}
-                    {selectedArticle.sentiment && (
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">
-                            {selectedArticle.sentiment.score > 0.1 ? '😊' : selectedArticle.sentiment.score < -0.1 ? '😔' : '😐'}
-                          </span>
-                          <h4 className="font-semibold text-blue-900 dark:text-blue-100">Sentiment</h4>
-                        </div>
-                        <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
-                          {selectedArticle.sentiment.label} ({(selectedArticle.sentiment.score * 100).toFixed(0)}%)
-                        </p>
-                        <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${((selectedArticle.sentiment.score + 1) / 2) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
+                    {/* AI Analysis Section */}
+                    {(selectedArticle.sentiment || selectedArticle.qualityScore || selectedArticle.namedEntities || selectedArticle.topics) && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                          </svg>
+                          AI Analysis
+                        </h3>
 
-                    {/* Quality Score */}
-                    {selectedArticle.qualityScore && (
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">⭐</span>
-                          <h4 className="font-semibold text-green-900 dark:text-green-100">Quality Score</h4>
-                        </div>
-                        <p className="text-sm text-green-800 dark:text-green-300 mb-2">
-                          {selectedArticle.qualityScore}/10
-                        </p>
-                        <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              selectedArticle.qualityScore > 7 ? 'bg-green-600 dark:bg-green-400' :
-                              selectedArticle.qualityScore > 4 ? 'bg-yellow-500 dark:bg-yellow-400' :
-                              'bg-red-500 dark:bg-red-400'
-                            }`}
-                            style={{ width: `${(selectedArticle.qualityScore / 10) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Sentiment Analysis */}
+                          {selectedArticle.sentiment && (
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-2xl">
+                                  {selectedArticle.sentiment.score > 0.1 ? '😊' : selectedArticle.sentiment.score < -0.1 ? '😔' : '😐'}
+                                </span>
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-100">Sentiment</h4>
+                              </div>
+                              <p className="text-sm text-blue-800 dark:text-blue-300 mb-2">
+                                {selectedArticle.sentiment.label} ({(selectedArticle.sentiment.score * 100).toFixed(0)}%)
+                              </p>
+                              <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                                <div
+                                  className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${((selectedArticle.sentiment.score + 1) / 2) * 100}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
 
-                    {/* Named Entities */}
-                    {selectedArticle.namedEntities && selectedArticle.namedEntities.length > 0 && (
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">🏷️</span>
-                          <h4 className="font-semibold text-purple-900 dark:text-purple-100">Named Entities</h4>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedArticle.namedEntities.slice(0, 5).map((entity, index) => (
-                            <span
-                              key={index}
-                              className="inline-block px-2 py-1 text-xs bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full"
-                            >
-                              {entity.text}
-                            </span>
-                          ))}
-                          {selectedArticle.namedEntities.length > 5 && (
-                            <span className="text-xs text-purple-600 dark:text-purple-400">
-                              +{selectedArticle.namedEntities.length - 5} more
-                            </span>
+                          {/* Quality Score */}
+                          {selectedArticle.qualityScore && (
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-2xl">⭐</span>
+                                <h4 className="font-semibold text-green-900 dark:text-green-100">Quality Score</h4>
+                              </div>
+                              <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+                                {selectedArticle.qualityScore}/100
+                              </p>
+                              <div className="w-full bg-green-200 dark:bg-green-800 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 ${selectedArticle.qualityScore > 70 ? 'bg-green-600 dark:bg-green-400' :
+                                    selectedArticle.qualityScore > 40 ? 'bg-yellow-500 dark:bg-yellow-400' :
+                                      'bg-red-500 dark:bg-red-400'
+                                    }`}
+                                  style={{ width: `${selectedArticle.qualityScore}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Named Entities */}
+                          {selectedArticle.namedEntities && selectedArticle.namedEntities.length > 0 && (
+                            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-2xl">🏷️</span>
+                                <h4 className="font-semibold text-purple-900 dark:text-purple-100">Named Entities</h4>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {selectedArticle.namedEntities.slice(0, 5).map((entity, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-block px-2 py-1 text-xs bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full max-w-[200px] truncate align-bottom"
+                                  >
+                                    {entity.text}
+                                  </span>
+                                ))}
+                                {selectedArticle.namedEntities.length > 5 && (
+                                  <span className="text-xs text-purple-600 dark:text-purple-400">
+                                    +{selectedArticle.namedEntities.length - 5} more
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           )}
                         </div>
+
+                        {/* Topics */}
+                        {selectedArticle.topics && selectedArticle.topics.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Topics</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedArticle.topics.map((topic, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-3 py-1 text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-100 dark:border-blue-800/50"
+                                >
+                                  {topic.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
+
+                    {/* Related Articles Section */}
+                    {relatedArticles.length > 0 && (
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                          </svg>
+                          Related Articles
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {relatedArticles.map((relatedArticle) => (
+                            <motion.div
+                              key={relatedArticle.id}
+                              className="group bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer"
+                              onClick={() => {
+                                closeArticle();
+                                setTimeout(() => openArticle(relatedArticle), 300);
+                              }}
+                              whileHover={{ y: -4 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <h4 className="font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {relatedArticle.title}
+                              </h4>
+                              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                <span>{relatedArticle.published_date}</span>
+                                <span className="flex items-center text-blue-600 dark:text-blue-400 font-medium">
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                  {relatedArticle.readingTime} min read
+                                </span>
+                              </div>
+                              {relatedArticle.summary && (
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">
+                                  {relatedArticle.summary}
+                                </p>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Closing Grids/Containers from Read Tab */}
                   </div>
 
-                  {/* Topics */}
-                  {selectedArticle.topics && selectedArticle.topics.length > 0 && (
-                    <div className="mt-4">
-                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Topics</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedArticle.topics.map((topic, index) => (
-                          <span
-                            key={index}
-                            className="inline-block px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full"
-                          >
-                            {topic.name} ({topic.weight.toFixed(2)})
-                          </span>
-                        ))}
+                ) : (
+                  <div className="max-w-3xl mx-auto h-full flex flex-col h-[60vh]">
+                    <div className="flex-grow space-y-4 mb-6 overflow-y-auto pr-2">
+                      {chatMessages.length === 0 && (
+                        <div className="text-center text-gray-500 mt-10">
+                          <p className="mb-2 text-4xl">💬</p>
+                          <p>Ask me anything about this article!</p>
+                        </div>
+                      )}
+                      {chatMessages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[80%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-none'}`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))}
+                      {isChatLoading && (
+                        <div className="flex justify-start">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-2xl rounded-bl-none text-sm text-gray-500">
+                            AI is typing...
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="sticky bottom-0 bg-white dark:bg-gray-900 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                          placeholder="Type your question..."
+                          className="flex-grow p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border-none focus:ring-2 focus:ring-blue-500 outline-none text-gray-800 dark:text-white"
+                        />
+                        <button
+                          onClick={handleSendChat}
+                          disabled={isChatLoading || !chatInput.trim()}
+                          className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </button>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* Related Articles Section */}
-              {relatedArticles.length > 0 && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    Related Articles
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {relatedArticles.map((relatedArticle) => (
-                      <motion.div
-                        key={relatedArticle.id}
-                        className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors cursor-pointer"
-                        onClick={() => {
-                          closeArticle();
-                          setTimeout(() => openArticle(relatedArticle), 300);
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
-                          {relatedArticle.title}
-                        </h4>
-                        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                          <span>{relatedArticle.published_date}</span>
-                          <span className="text-blue-600 dark:text-blue-400">
-                            {relatedArticle.readingTime} min read
-                          </span>
-                        </div>
-                        {relatedArticle.summary && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
-                            {relatedArticle.summary}
-                          </p>
-                        )}
-                      </motion.div>
-                    ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        )
+        }
+      </AnimatePresence >
+    </div >
   )
 }
 
