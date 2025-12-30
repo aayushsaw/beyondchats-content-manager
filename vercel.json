@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "dist",
   "env": {
     "VITE_API_URL": "https://beyondchats-backend-p8s9.onrender.com/api"
   },
