@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Force port 3002 to bypass environment variable issues
-const API_URL = 'http://localhost:3002/api/articles';
+// Use environment variable for API URL, fallback to localhost for development
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api/articles';
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
