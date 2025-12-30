@@ -1,9 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "ls -d */ && cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "cleanUrls": true,
   "rewrites": [
+    {
+      "source": "/assets/(.*)",
+      "destination": "/frontend/dist/assets/$1"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
