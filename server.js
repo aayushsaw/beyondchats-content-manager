@@ -144,9 +144,7 @@ function initializeDatabase() {
 }
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://beyondchats-backend-p8s9.onrender.com', 'https://beyondchats-content-manager.vercel.app', 'https://beyondchats-content-manager-git-main-aayush-saws-projects.vercel.app', 'https://beyondchats-content-manager-9ax5jlbos-aayush-saws-projects.vercel.app', 'https://your-frontend-domain.com'] 
-    : 'http://localhost:5173',
+  origin: ['https://beyondchats-backend-p8s9.onrender.com', 'https://beyondchats-content-manager.vercel.app', 'https://beyondchats-content-manager-git-main-aayush-saws-projects.vercel.app', 'https://beyondchats-content-manager-9ax5jlbos-aayush-saws-projects.vercel.app', 'https://your-frontend-domain.com', 'http://localhost:5173'],
   credentials: true
 }));
 app.use(bodyParser.json());
