@@ -5,13 +5,17 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const natural = require('natural');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 
 const app = express();
 const port = process.env.PORT || 3002;
 const db = new sqlite3.Database('./articles.db');
 
-// Initialize Gemini API
+// Initialize AI Clients
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // List of models to try in order of preference
 const GEMINI_MODELS = [
@@ -40,8 +44,29 @@ async function generateWithFallback(prompt) {
             continue;
         }
     }
+    
+    // Final Attempt with OpenAI (Guaranteed Response Policy)
+    if (process.env.OPENAI_API_KEY) {
+        console.log(`🤖 [OpenAI] Attempting final fallback with ChatGPT...`);
+        try {
+            return await generateWithOpenAI(prompt);
+        } catch (error) {
+            console.error(`❌ [OpenAI] ChatGPT failed:`, error.message);
+            lastError = error;
+        }
+    }
 
-    throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
+    throw new Error(`All AI models (Gemini & OpenAI) failed. Last error: ${lastError?.message}`);
+}
+
+// OpenAI specific helper
+async function generateWithOpenAI(prompt) {
+    const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini", // Cost-effective and reliable fallback
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1000,
+    });
+    return response.choices[0].message.content;
 }
 
 // Single model retry logic (handling 429s/Transient errors)
