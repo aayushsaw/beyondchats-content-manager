@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && mkdir -p dist && cp -r frontend/dist/. dist/",
     "scrape": "node scrape_and_store.js",
     "scrape-all": "node scrape_all_articles.js",
     "update": "node update_article.js",
