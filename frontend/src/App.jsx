@@ -3,7 +3,16 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Use environment variable for API URL, fallback to localhost for development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+const getApiUrl = () => {
+  let url = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
+  // Ensure the URL doesn't end in a slash and has the /api prefix for production backend
+  url = url.replace(/\/$/, '');
+  if (url.includes('beyondchats-backend') && !url.endsWith('/api')) {
+    url += '/api';
+  }
+  return url;
+};
+const API_URL = getApiUrl();
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
