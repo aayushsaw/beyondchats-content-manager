@@ -3,7 +3,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Use environment variable for API URL, fallback to localhost for development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api/articles';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3002/api';
 
 // Theme and localStorage utilities
 const getStoredTheme = () => localStorage.getItem('theme') || 'light';
@@ -79,7 +79,7 @@ function App() {
         parts: [{ text: msg.content }]
       }));
 
-      const res = await fetch(`${API_URL}/${selectedArticle.id}/chat`, {
+      const res = await fetch(`${API_URL}/articles/${selectedArticle.id}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg.content, history })
@@ -112,7 +112,7 @@ function App() {
     const loadData = async () => {
       setError(null) // Reset error state
       try {
-        const targetUrl = API_URL.replace('/articles', '/articles/enhanced');
+        const targetUrl = `${API_URL}/articles/enhanced`;
         console.log('Fetching articles from:', targetUrl);
 
         // Load articles first (required)
@@ -125,8 +125,8 @@ function App() {
         // Load optional data (topics and recommendations)
         try {
           const [topicsResponse, recommendationsResponse] = await Promise.all([
-            axios.get(`${API_URL.replace('/articles', '/articles/topics')}`).catch(() => ({ data: { data: [] } })),
-            axios.post(`${API_URL.replace('/articles', '/articles/recommendations')}`, { userBehavior }).catch(() => ({ data: { data: [] } }))
+            axios.get(`${API_URL}/articles/topics`).catch(() => ({ data: { data: [] } })),
+            axios.post(`${API_URL}/articles/recommendations`, { userBehavior }).catch(() => ({ data: { data: [] } }))
           ]);
           setTopics(topicsResponse.data.data || [])
           setPersonalizedRecommendations(recommendationsResponse.data.data || [])
@@ -202,7 +202,7 @@ function App() {
 
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL.replace('/articles', '/articles/search/ai')}?q=${encodeURIComponent(query)}`)
+      const response = await axios.get(`${API_URL}/articles/search/ai?q=${encodeURIComponent(query)}`)
       setFilteredArticles(response.data.data)
     } catch (error) {
       console.error("AI search failed:", error)
@@ -228,7 +228,7 @@ function App() {
 
     // Fetch related articles
     try {
-      const response = await axios.get(`${API_URL.replace('/articles', '/articles/')}${article.id}/related`)
+      const response = await axios.get(`${API_URL}/articles/${article.id}/related`)
       setRelatedArticles(response.data.data)
     } catch (error) {
       console.error("Error fetching related articles, using mock data", error)
