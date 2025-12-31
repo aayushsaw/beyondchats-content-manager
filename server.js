@@ -508,6 +508,39 @@ app.get('/api/articles/:id/related', (req, res) => {
     });
 });
 
+app.get('/api/articles/topics', (req, res) => {
+    res.json({ "message": "success", "data": ["AI & Technology", "Healthcare", "Business", "Marketing", "Web Development"] });
+});
+
+app.post('/api/articles/recommendations', (req, res) => {
+    // Return top 3 latest articles as recommendations for now
+    db.all("SELECT * FROM articles ORDER BY published_date DESC LIMIT 3", [], (err, rows) => {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.get('/api/articles/search/ai', async (req, res) => {
+    const query = req.query.q;
+    if (!query) return res.status(400).json({ error: "Query required" });
+
+    const prompt = `Based on the following user search query, return a JSON list of article IDs (integers) that are most relevant. Only return article IDs from our database if you know them, or suggest the 'type' of content they should see.
+    Query: "${query}"`;
+
+    try {
+        // Simplified search fallback
+        db.all("SELECT id, title FROM articles", [], (err, rows) => {
+            if (err) return res.status(400).json({ error: err.message });
+            const filtered = rows.filter(a => 
+                a.title.toLowerCase().includes(query.toLowerCase())
+            );
+            res.json({ "message": "success", "data": filtered });
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Chat with Article Endpoint
 app.post('/api/articles/:id/chat', (req, res) => {
     const { message, history } = req.body;
