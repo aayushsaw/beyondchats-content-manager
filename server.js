@@ -20,8 +20,9 @@ const openai = new OpenAI({
 // List of models to try in order of preference
 const GEMINI_MODELS = [
     "gemini-1.5-flash",
+    "gemini-1.5-pro",
     "gemini-2.0-flash",
-    "gemini-1.5-pro"
+    "gemini-pro"
 ];
 
 // Helper to generate content with fallback strategies
